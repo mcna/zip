@@ -4,7 +4,7 @@
   (excl:octets-to-string octets :external-format ef))
 
 (defun string-to-octets (string ef)
-  (excl:string-to-octets octets :external-format ef))
+  (excl:string-to-octets string :external-format ef))
 
 (defun make-buffer-output-stream (outbuf)
   (excl:make-buffer-output-stream outbuf))
