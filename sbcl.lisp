@@ -47,9 +47,12 @@
 
 (defmethod sb-gray:stream-read-sequence
     ((s truncating-stream) seq &optional (start 0) (end (length seq)))
-  (let ((n (- end start))
-	(max (- (size s) (pos s))))
-    (read-sequence (input-handle s)
-		   seq
-		   :start start
-		   :end (+ start (min n max)))))
+  (let* ((n (- end start))
+	 (max (- (size s) (pos s)))
+	 (result
+	  (read-sequence (input-handle s)
+			 seq
+			 :start start
+			 :end (+ start (min n max)))))
+    (incf (pos s) (- result start))
+    result))
