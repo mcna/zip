@@ -5,7 +5,9 @@
      (pos :initform 0 :accessor pos)))
 
 (defmethod stream-write-sequence
-    ((stream buffer-output-stream) seq &optional (start 0) end)
+    #+sbcl ((stream buffer-output-stream) seq &optional (start 0) end)
+    #+lispworks ((stream buffer-output-stream) seq start end)
+    #-(or sbcl lispworks) ...
   (replace (buf stream)
 	   :start1 (pos stream)
 	   :start2 start
