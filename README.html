@@ -54,7 +54,8 @@
     <h2>Recent changes</h2>
     <p>
       2005-04-05: ACL fixes (thank to Edi Weitz).  Lispworks port
-      (thanks to Sean Ross).
+      (thanks to Sean Ross).  Store <tt>file-write-date</tt> (also fixes
+      FilZip compatibility).
     </p>
 
     <h2>Download</h2>
@@ -148,11 +149,14 @@ $ cvs co zip</pre>
     <p>
     </p>
 
-    <div class="def">Function WRITE-ZIPENTRY (zipwriter name data)</div>
+    <div class="def">Function WRITE-ZIPENTRY (zipwriter name data &key file-write-date)</div>
     <p>
       Append a new entry called <tt>name</tt> to <tt>zipwriter</tt>.
       Read data from <tt>(unsigned-byte 8)</tt> stream <tt>data</tt>
       until EOF and compress it into "deflate"-format.
+      Use <tt>file-write-date</tt> as the entry's date and time.
+      Default to <tt>(file-write-date data)</tt>, use 1980-01-01T00:00
+      if <tt>nil</tt>.
     </p>
 
     <div class="def">Function ZIP (pathname source-directory &key if-exists)</div>
@@ -160,6 +164,11 @@ $ cvs co zip</pre>
       Compress all files in <tt>source-directory</tt> recursively into a
       new zip archive at <tt>pathname</tt>.  Note that entry file names
       will not contain the name <tt>source-directory</tt>.
+    </p>
+
+    <h2>Bookmark</h2>
+    <p>
+      <a href="http://www.pkware.com/company/standards/appnote/appnote.txt">spec</a>
     </p>
   </body>
 </html>

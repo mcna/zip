@@ -244,7 +244,8 @@
 (defmethod get-zipfile-entry (name (zipfile zipfile))
   (gethash name (zipfile-entries zipfile)))
 
-(defun write-zipentry (z name data)
+(defun write-zipentry
+    (z name data &key (file-write-date (file-write-date data)))
   (setf name (substitute #\/ #\\ name))
   (let* (#+allegro (excl:*locale* (excl:find-locale :latin1))
          (s (zipwriter-stream z))
@@ -258,9 +259,13 @@
     (setf (file/version-needed-to-extract header) 2) ;XXX ist das 2.0?
     (setf (file/flags header) 8)        ;bit 3: descriptor folgt nach daten
     (setf (file/method header) 8)
-    (setf (file/time header) 0)         ;XXX fixme
-    (setf (file/date header) 0)         ;XXX fixme
-    (setf (file/crc header) 0)
+    (multiple-value-bind (s min h d m y)
+        (decode-universal-time
+         (or file-write-date (encode-universal-time 0 0 0 1 1 1980 0)))
+      (setf (file/time header)
+            (logior (ash h 11) (ash min 5) (ash s -1)))
+      (setf (file/date header)
+            (logior (ash (- y 1980) 9) (ash m 5) d)))
     (setf (file/compressed-size header) 0)
     (setf (file/size header) 0)
     (setf (file/name-length header) (length utf8-name))
@@ -428,7 +433,8 @@
                        (write-zipentry
                         zip
                         (enough-namestring (namestring f) base)
-                        (make-concatenated-stream))
+                        (make-concatenated-stream)
+                        :file-write-date (file-write-date f))
                        (recurse #+allegro f
                                 #-allegro (make-pathname
                                            :name :wild
