@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+  <head>
+    <title>Common Lisp ZIP library</title>
+    <style type="text/css">
+      body {
+        color: #000000;
+        background-color: #ffffff;
+        margin-bottom: 10%;
+        padding-left: 30px;
+      }
+      h1,h2,h3 {
+        margin-left: -30px;
+      }
+      pre {
+        background-color: #eeeeee;
+        border: solid 1px #d0d0d0;
+        padding: 1em;
+        margin-right: 10%;
+      }
+      .def {
+        background-color: #ddddff;
+        font-weight: bold;
+      }
+      .nomargin {
+        margin-bottom: 0;
+        margin-top: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Common Lisp ZIP library</h1>
+
+    <p>A library for .zip-file reading and writing, written in Common Lisp.</p>
+
+    <p>
+      Written by David Lichteblau &lt;david@lichteblau.com&gt;.
+    </p>
+    <p>
+      Thanks to <a href="http://common-lisp.net">common-lisp.net</a> for
+      hosting.
+    </p>
+    <p>
+      Uses <a href="http://www.cliki.net/salza">salza</a> for compression.
+    </p>
+
+    <h2>Download</h2>
+    <ul>
+      <li>asdf-install: <pre>(asdf-install:install :zip)</pre></li>
+      <li>Anoncvs:
+        <pre>$ export CVSROOT=:pserver:anonymous@common-lisp.net:/project/zip/cvsroot
+$ cvs login
+Logging in to :pserver:anonymous@common-lisp.net:2401/project/zip/cvsroot
+CVS password: anonymous
+$ cvs co zip</pre>
+      </li>
+      <li><a href="http://common-lisp.net/project/zip/zip.tgz">Tarball</a></li>
+    </ul>
+    <p>Installation (without asdf-install):</p>
+    <pre>$ ln -s `pwd`/zip.asd /your/system/directory
+* (asdf:operate 'asdf:load-op :zip)</pre>
+
+    <h2>Portability</h2>
+    <p>
+      Needs gray streams.  Currently works out-of-the-box on SBCL and ACL.
+      Should be trivial to port to other Lisps.
+    </p>
+    <p>
+      Handles Unicode characters in filenames on ACL (within the zip-file), is
+      waiting for someone to fix Unicode handling on SBCL.
+    </p>
+
+    <h2>ZIP-file reading</h2>
+    <p>
+      Zip archives are represented as opaque handles.  Entries of the
+      zip-file are named by strings and represented as objects, too.
+    </p>
+
+    <div class="def">Function OPEN-ZIPFILE (pathname) => zipfile</div>
+    <p>
+      Open .zip-file <tt>pathname</tt> for reading and return a handle for it.
+    </p>
+    <div class="def">Function CLOSE-ZIPFILE (zipfile)</div>
+    <p>
+      Close the file handle.
+    </p>
+
+    <div class="def">Macro WITH-ZIPFILE ((var pathname) &body body) => result of body</div>
+    <p>
+      Bind <tt>var</tt> to the result of <tt>open-zipfile</tt>, evaluate
+      body as an implicit progn and call <tt>close-zipfile</tt> before
+      exiting.
+    </p>
+
+    <div class="def">Function GET-ZIPFILE-ENTRY (name zipfile) => zipfile-entry</div>
+    <p>Return an entry handle for the file called <tt>name</tt>.</p>
+    <div class="def">Function ZIPFILE-ENTRIES (zipfile) => hash-table</div>
+    <p>
+      Return a hash-table mapping filenames to entry handles for all
+      files contained in the zip archive.
+    </p>
+    <div class="def">Macro DO-ZIPFILE-ENTRIES ((name-var entry-var zipfile) &body body) => nil</div>
+    <p>
+      Map over all entries in <tt>zipfile</tt> binding <tt>name-var</tt>
+      and <tt>entry-var</tt> to each file name and entry handle in
+      turn.  Establish implicit block named <tt>nil</tt> around the
+      loop.
+    </p>
+
+    <div class="def">Function ZIPFILE-ENTRY-NAME (zipfile-entry) => string</div>
+    <p>Return an entry's file name as a string.</p>
+    <div class="def">Function ZIPFILE-ENTRY-CONTENTS (entry &optional
+    stream) => see below</div>
+    <p>
+      If <tt>stream</tt> is given, extract <tt>entry</tt> to the
+      <tt>(unsigned-byte 8)</tt> stream given as the argument.
+      Otherwise, return the entry contents as an <tt>(unsigned-byte
+      8)</tt> vector.
+    </p>
+
+    <div class="def">Function UNZIP (pathname target-directory &key if-exists verbose) => nil</div>
+    <p>
+      Extract all entries from the zip archive at <tt>pathname</tt> into
+      <tt>target-directory</tt>.  <tt>if-exists</tt> as for <a
+      href="http://www.xach.com/clhs.php?open">cl:open</a>.
+    </p>
+
+    <h2>ZIP-file writing</h2>
+    <p>
+      <tt>zipwriter</tt>s are handles used to create zip archives. They
+      are distinct from the zip handles used for reading.
+    </p>
+    <div class="def">Macro WITH-OUTPUT-TO-ZIPFILE ((var pathname &key if-exists) &body body)</div>
+    <p>
+    </p>
+
+    <div class="def">Function WRITE-ZIPENTRY (zipwriter name data)</div>
+    <p>
+      Append a new entry called <tt>name</tt> to <tt>zipwriter</tt>.
+      Read data from <tt>(unsigned-byte 8)</tt> stream <tt>data</tt>
+      until EOF and compress it into "deflate"-format.
+    </p>
+
+    <div class="def">Function ZIP (pathname source-directory &key if-exists)</div>
+    <p>
+      Compress all files in <tt>source-directory</tt> recursively into a
+      new zip archive at <tt>pathname</tt>.  Note that entry file names
+      will not contain the name <tt>source-directory</tt>.
+    </p>
+  </body>
+</html>
