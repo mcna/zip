@@ -212,7 +212,9 @@
 (defun open-zipfile
     (pathname &key (external-format (default-external-format)))
   (let* (#+allegro (excl:*locale* (excl:find-locale :latin1))
-         (s (open pathname :element-type '(unsigned-byte 8))))
+         (s (open pathname
+                  #-allegro :element-type
+                  #-allegro '(unsigned-byte 8))))
     (unwind-protect
 	(progn
 	  (seek-to-end-header s)
@@ -290,7 +292,7 @@
       (let ((header (zipwriter-entry-header e))
             (entry (make-directory-entry)))
         (setf (cd/signature entry) #x02014b50)
-        (setf (cd/version-made-by entry) 0) ;dos compatible
+        (setf (cd/version-made-by entry) 20) ;version 2.0, fat
         (setf (cd/version-needed-to-extract entry)
               (file/version-needed-to-extract header))
         (setf (cd/flags entry) (file/flags header))
