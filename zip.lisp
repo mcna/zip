@@ -210,9 +210,7 @@
 			  (cd/comment-length header))))))
 
 (defun open-zipfile
-    (pathname &key (external-format
-		    #+allegro (excl:find-external-format :default)
-		    #-allegro :dummy))
+    (pathname &key (external-format (default-external-format)))
   (let* (#+allegro (excl:*locale* (excl:find-locale :latin1))
          (s (open pathname :element-type '(unsigned-byte 8))))
     (unwind-protect
@@ -359,9 +357,7 @@
 
 (defun make-zipfile-writer
     (pathname &key (if-exists :error)
-                   (external-format
-		    #+allegro (excl:find-external-format :default)
-		    #-allegro :dummy))
+                   (external-format (default-external-format)))
   (let (#+allegro (excl:*locale* (excl:find-locale :latin1))
         (c (cons nil nil)))
     (make-zipwriter
@@ -414,29 +410,32 @@
 
 (defun directoryp (pathname)
   #+allegro (excl:file-directory-p pathname)
-  #-allegro (and (null (pathname-name pathname))
-                 (null (pathname-type pathname))))
+  #+lispworks (lispworks:file-directory-p pathname)
+  #-(or lispworks allegro)
+  (and (null (pathname-name pathname))
+       (null (pathname-type pathname))))
 
 (defun zip (pathname source-directory &key (if-exists :error))
-  (with-output-to-zipfile (zip pathname :if-exists if-exists)
-    (labels ((recurse (d)
-               (dolist (f #+allegro (directory d :directories-are-files nil)
-			  #-allegro (directory d))
-                 (cond
-                   ((directoryp f)
-                     (write-zipentry
-                      zip
-                      (enough-namestring (namestring f) source-directory)
-                      (make-concatenated-stream))
-                     (recurse #+allegro f
-			      #-allegro (make-pathname
-					 :name :wild
-					 :type :wild
-					 :defaults f)))
-                   ((or (pathname-name f) (pathname-type f))
-                     (with-open-file (s f :element-type '(unsigned-byte 8))
+  (let ((base (directory-namestring source-directory)))
+    (with-output-to-zipfile (zip pathname :if-exists if-exists)
+      (labels ((recurse (d)
+                 (dolist (f #+allegro (directory d :directories-are-files nil)
+                            #-allegro (directory d))
+                   (cond
+                     ((directoryp f)
                        (write-zipentry
                         zip
-                        (enough-namestring (namestring f) source-directory)
-                        s)))))))
-      (recurse source-directory))))
+                        (enough-namestring (namestring f) base)
+                        (make-concatenated-stream))
+                       (recurse #+allegro f
+                                #-allegro (make-pathname
+                                           :name :wild
+                                           :type :wild
+                                           :defaults f)))
+                     ((or (pathname-name f) (pathname-type f))
+                       (with-open-file (s f :element-type '(unsigned-byte 8))
+                         (write-zipentry
+                          zip
+                          (enough-namestring (namestring f) base)
+                          s)))))))
+        (recurse source-directory)))))

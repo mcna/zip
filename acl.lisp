@@ -1,5 +1,8 @@
 (in-package :zip)
 
+(defun default-external-format ()
+  (excl:find-external-format :default))
+
 (defun octets-to-string (octets ef)
   (excl:octets-to-string octets :external-format ef))
 

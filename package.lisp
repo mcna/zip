@@ -22,4 +22,13 @@
            #:skip-gzip-header
 
            #:compress                   ;deflate.lisp
-           #:store))
+           #:store)
+  #-allegro
+  (:import-from #+sbcl :sb-gray
+                #+lispworks :stream
+                #-(or sbcl lispworks) ...
+                #:fundamental-binary-output-stream
+                #:stream-write-sequence
+                #:fundamental-binary-input-stream
+                #:stream-read-byte
+                #:stream-read-sequence))
