@@ -120,13 +120,13 @@
 	(crc 0))
     (flet ((flush-stream (zlib-stream)
 	     (let ((start (if (zerop nout) 2 0))
-		   (end (salza::zlib-stream-position zlib-stream)))
+		   (end (salza:zlib-stream-position zlib-stream)))
 	       (write-sequence (salza::zlib-stream-buffer zlib-stream)
 			       output
 			       :start start
 			       :end end)
 	       (incf nout (- end start))
-	       (setf (salza::zlib-stream-position zlib-stream) 0))))
+	       (setf (salza:zlib-stream-position zlib-stream) 0))))
       (let* ((input-buffer (make-array 8192 :element-type '(unsigned-byte 8)))
 	     (output-buffer (make-array 8192 :element-type '(unsigned-byte 8)))
 	     (zlib-stream (salza:make-zlib-stream output-buffer
@@ -135,12 +135,7 @@
 	  (let ((end (read-sequence input-buffer input)))
 	    (salza:zlib-write-sequence input-buffer zlib-stream :end end)
 	    (incf nin end)
-	    (let
-		;; fixme
-		((b (if (eql end (length input-buffer))
-			input-buffer
-			(subseq input-buffer 0 end))))
-	      (setf crc (update-crc crc b)))
+	    (setf crc (update-crc crc input-buffer end))
 	    (when (zerop end)
 	      (salza:finish-zlib-stream zlib-stream)
 	      (return (values nin nout crc)))))))))
@@ -152,17 +147,13 @@
                          :element-type '(unsigned-byte 8)))
         (ntotal 0)
         (crc 0))
-    ;; Compute CRC using R. Matthew Emerson's Lisp implementation instead of
-    ;; zlib's CRC function, since STORE is (only) useful in the absence of
-    ;; zlib anyway.
     (loop
         for n = (read-sequence buf in :end (length buf))
         until (zerop n)
         do
           (write-sequence buf out :end n)
           (incf ntotal n)
-          (let ((b (if (eql n (length buf)) buf (subseq buf 0 n))))
-            (setf crc (update-crc crc b))))
+          (setf crc (update-crc crc buf n)))
     (values ntotal ntotal crc)))
 
 (defun seek-to-end-header (s)

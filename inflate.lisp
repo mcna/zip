@@ -21,7 +21,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: inflate.lisp 10524 2004-10-11 15:25:33Z david $
+;; $Id: inflate.lisp,v 1.1.1.1 2005/04/03 19:36:28 dlichteblau Exp $
 
 ;; Description:
 ;;   inflate a stream of bytes which was compressed with the Deflate
