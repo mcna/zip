@@ -1,0 +1,58 @@
+The ZIP library reads and writes .zip-files.
+
+Report bugs to <david@lichteblau.com>.
+
+
+Files
+-----
+
+zip.lisp, sbcl.lisp, acl.lisp
+	Copyright (c) 2004,2005 David Lichteblau <david@lichteblau.com>
+	COMPRESS function taken from Zachary Beane's salza.
+        Changes copyright (c) 2004 knowledgeTools Int. GmbH
+
+inflate.lisp
+        copyright (c) 1986-2000 Franz Inc, Berkeley, CA
+        (moved into the "ZIP" package, no other changes)
+
+
+
+Package ZIP exports these symbols:
+----------------------------------
+
+ZIP-file reading:
+	open-zipfile pathname => zipfile
+	close-zipfile zipfile
+	with-zipfile (var pathname) &body body => result of body
+
+	zipfile-entries zipfile => hashtable
+	get-zipfile-entry name zipfile => zipfile-entry
+	do-zipfile-entries (name-var entry-var zipfile) &body body => nil
+
+	zipfile-entry-name zipfile-entry => string
+	zipfile-entry-contents zipfile-entry &optional stream
+           => uncompressed-octets as a vector unless `stream' is given,
+	      in which case the data is written to this stream instead
+
+	unzip pathname target-directory &key if-exists verbose => nil
+
+ZIP-file writing:
+        with-output-to-zipfile (var pathname &key if-exists) &body body
+	write-zipentry zipwriter name data
+        zip pathname source-directory &key if-exists
+
+deflate/inflate abstraction:
+	compress in out
+	inflate in out
+	store in out
+
+
+Installation
+------------
+
+With ASDF-INSTALL:
+	(asdf-install:install :zip)
+
+Without ASDF-INSTALL:
+	$ ln -s `pwd`/zip.asd /your/system/directory
+	* (asdf:operate 'asdf:load-op :zip)
