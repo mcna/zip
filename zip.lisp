@@ -133,12 +133,14 @@
 						  :callback #'flush-stream)))
 	(loop
 	  (let ((end (read-sequence input-buffer input)))
-	    (salza:zlib-write-sequence input-buffer zlib-stream :end end)
-	    (incf nin end)
-	    (setf crc (update-crc crc input-buffer end))
-	    (when (zerop end)
-	      (salza:finish-zlib-stream zlib-stream)
-	      (return (values nin nout crc)))))))))
+            (cond
+              ((plusp end)
+                (salza:zlib-write-sequence input-buffer zlib-stream :end end)
+                (incf nin end)
+                (setf crc (update-crc crc input-buffer end)))
+              (t
+                (salza:finish-zlib-stream zlib-stream)
+                (return (values nin nout crc))))))))))
 
 (defun store (in out)
   "Copy uncompressed bytes from IN to OUT and return values like COMPRESS."
