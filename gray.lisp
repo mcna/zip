@@ -8,7 +8,7 @@
     #+sbcl ((stream buffer-output-stream) seq &optional (start 0) end)
     #+lispworks ((stream buffer-output-stream) seq start end)
     #-(or sbcl lispworks) ...
-  (replace (buf stream)
+  (replace (buf stream) seq
 	   :start1 (pos stream)
 	   :start2 start
 	   :end2 end))
