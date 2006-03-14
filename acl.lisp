@@ -20,9 +20,9 @@
   (make-array length :element-type '(unsigned-byte 8) :initial-element 0)) 
 
 (defmethod excl:device-open ((stream truncating-stream)
-                             #+allegro-v7.0 slots
+                             #+(version>= 7 0) slots
                              options)
-  (declare (ignore options #+allegro-v7.0 slots))
+  (declare (ignore options #+(version>= 7 0) slots))
   (excl:with-stream-class (truncating-stream stream)
     (setf (slot-value stream 'excl::buffer)
           (make-octets (excl:device-buffer-length stream)))
