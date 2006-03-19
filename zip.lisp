@@ -1,10 +1,11 @@
-;;;; Copyright (c) 2004,2005 David Lichteblau <david@lichteblau.com>
+;;;; Copyright (c) 2004-2006 David Lichteblau <david@lichteblau.com>
 ;;;; Lizenz: (L)LGPL
 ;;;;
 ;;;; Urspruenglicher Autor: David Lichteblau.
 ;;;; Aenderungen durch knowledgeTools GmbH.
 
-;;;; http://www.pkware.com/company/standards/appnote/
+;;;; http://www.pkware.com/business_and_developers/developer/popups/appnote.txt
+;;;; (http://www.pkware.com/company/standards/appnote/)
 
 (in-package :zip)
 
@@ -211,8 +212,7 @@
 
 (defun open-zipfile
     (pathname &key (external-format (default-external-format)))
-  (let* (#+allegro (excl:*locale* (excl:find-locale :latin1))
-         (s (open pathname
+  (let* ((s (open pathname
                   #-allegro :element-type
                   #-allegro '(unsigned-byte 8))))
     (unwind-protect
@@ -247,8 +247,7 @@
 (defun write-zipentry
     (z name data &key (file-write-date (file-write-date data)))
   (setf name (substitute #\/ #\\ name))
-  (let* (#+allegro (excl:*locale* (excl:find-locale :latin1))
-         (s (zipwriter-stream z))
+  (let* ((s (zipwriter-stream z))
          (header (make-local-header))
          (utf8-name (string-to-octets name (zipwriter-external-format z)))
          (entry (make-zipwriter-entry
@@ -288,8 +287,7 @@
     name))
 
 (defun write-central-directory (z)
-  (let* (#+allegro (excl:*locale* (excl:find-locale :latin1))
-         (s (zipwriter-stream z))
+  (let* ((s (zipwriter-stream z))
          (pos (file-position s))
          (n 0))
     (dolist (e (cdr (zipwriter-head z)))
@@ -331,8 +329,7 @@
       (write-sequence end s))))
 
 (defmethod zipfile-entry-contents ((entry zipfile-entry) &optional stream)
-  (let (#+allegro (excl:*locale* (excl:find-locale :latin1))
-        (s (zipfile-entry-stream entry))
+  (let ((s (zipfile-entry-stream entry))
 	header)
     (file-position s (zipfile-entry-offset entry))
     (setf header (make-local-header s))
@@ -365,8 +362,7 @@
 (defun make-zipfile-writer
     (pathname &key (if-exists :error)
                    (external-format (default-external-format)))
-  (let (#+allegro (excl:*locale* (excl:find-locale :latin1))
-        (c (cons nil nil)))
+  (let ((c (cons nil nil)))
     (make-zipwriter
      :stream (open pathname
 		   :direction :output

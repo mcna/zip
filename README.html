@@ -48,11 +48,26 @@
       hosting.
     </p>
     <p>
-      Uses <a href="http://www.cliki.net/salza">salza</a> for compression.
+      Uses <a href="http://www.cliki.net/salza">salza</a> for
+      compression, <a
+      href="http://www.weitz.de/flexi-streams/">flexi-streams</a> for external
+      format support, <a
+      href="http://common-lisp.net/project/cl-plus-ssl/#trivial-gray-streams">trivial-gray-streams</a>
+      for gray streams portability, and includes <a
+      href="http://opensource.franz.com/deflate/">inflate.cl</a>
+      for decompression.
     </p>
 
     <h2>Recent changes</h2>
     <p>
+      2006-xx-yy: Fixed the gray stream port (including a data
+      corruption bug that was in CVS for some time).  Switched to
+      flexi-stream external-format functions for portability.  Uses
+      trivial-gray-streams now.  Allegro 8.0 fix.  Incompatible change:
+      Don't bind <tt>*locale*</tt> on Allegro anymore.  (Thanks to all
+      patch submitters).
+    <p>
+    </p>
       2005-04-05: ACL fixes (thank to Edi Weitz).  Lispworks port
       (thanks to Sean Ross).  Store <tt>file-write-date</tt> (also fixes
       FilZip compatibility).

@@ -1,14 +1,34 @@
 (in-package :zip)
 
+(defun default-external-format ()
+  :utf-8)
+
+(defun octets-to-string (octets ef)
+  (with-output-to-string (out)
+    (flexi-streams:with-input-from-sequence (in octets)
+      (let ((in* (flexi-streams:make-flexi-stream in :external-format ef)))
+	(loop
+	    for c = (read-char in* nil nil)
+	    while c
+	    do (write-char c out))))))
+
+(defun string-to-octets (string ef)
+  (flexi-streams:with-output-to-sequence (out)
+    (with-input-from-string (in string)
+      (let ((out* (flexi-streams:make-flexi-stream out :external-format ef)))
+	(loop
+	    for c = (read-char in nil nil)
+	    while c
+	    do (write-char c out*))))))
+
 (defclass buffer-output-stream (fundamental-binary-output-stream)
     ((buf :initarg :buf :accessor buf)
      (pos :initform 0 :accessor pos)))
 
 (defmethod stream-write-sequence
-    #+sbcl ((stream buffer-output-stream) seq &optional (start 0) (end (length seq)))
-    #+lispworks ((stream buffer-output-stream) seq start end)
-    #-(or sbcl lispworks) ...
-  (replace (buf stream) seq
+    ((stream buffer-output-stream) seq start end &key)
+  (replace (buf stream)
+	   seq
 	   :start1 (pos stream)
 	   :start2 start
 	   :end2 end)
@@ -18,7 +38,8 @@
 (defun make-buffer-output-stream (outbuf)
   (make-instance 'buffer-output-stream :buf outbuf))
 
-(defclass truncating-stream (fundamental-binary-input-stream)
+(defclass truncating-stream
+    (trivial-gray-stream-mixin fundamental-binary-input-stream)
     ((input-handle :initarg :input-handle :accessor input-handle)
      (size :initarg :size :accessor size)
      (pos :initform 0 :accessor pos)))
@@ -30,10 +51,7 @@
 	(incf (pos s)))
       nil))
 
-(defmethod stream-read-sequence
-    #+sbcl ((s truncating-stream) seq &optional (start 0) (end (length seq)))
-    #+lispworks ((s truncating-stream) seq start end)
-    #-(or sbcl lispworks) ...
+(defmethod stream-read-sequence ((s truncating-stream) seq start end &key)
   (let* ((n (- end start))
 	 (max (- (size s) (pos s)))
 	 (result

@@ -1,3 +1,5 @@
+;;; native implementation of the portable functions in gray.lisp
+
 (in-package :zip)
 
 (defun default-external-format ()
@@ -7,7 +9,9 @@
   (excl:octets-to-string octets :external-format ef))
 
 (defun string-to-octets (string ef)
-  (excl:string-to-octets string :external-format ef))
+  (excl:string-to-octets string
+			 :external-format ef
+			 :null-terminate nil))
 
 (defun make-buffer-output-stream (outbuf)
   (excl:make-buffer-output-stream outbuf))
