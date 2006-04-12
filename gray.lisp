@@ -21,7 +21,8 @@
 	    while c
 	    do (write-char c out*))))))
 
-(defclass buffer-output-stream (fundamental-binary-output-stream)
+(defclass buffer-output-stream
+    (trivial-gray-stream-mixin fundamental-binary-output-stream)
     ((buf :initarg :buf :accessor buf)
      (pos :initform 0 :accessor pos)))
 
