@@ -26,6 +26,13 @@
     ((buf :initarg :buf :accessor buf)
      (pos :initform 0 :accessor pos)))
 
+;; fallback method just in case the lisp doesn't have or doesn't use
+;; stream-write-sequence:
+(defmethod stream-write-byte
+    ((stream buffer-output-stream) byte)
+  (stream-write-sequence stream (vector byte) 0 1)
+  byte)
+
 (defmethod stream-write-sequence
     ((stream buffer-output-stream) seq start end &key)
   (replace (buf stream)
