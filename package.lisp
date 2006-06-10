@@ -10,6 +10,7 @@
 	   #:get-zipfile-entry
 	   #:zipfile-entry-name
            #:zipfile-entry-size
+           #:zipfile-entry-comment
 	   #:do-zipfile-entries
 	   #:zipfile-entry-contents
 	   #:unzip

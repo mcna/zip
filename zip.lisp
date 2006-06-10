@@ -38,7 +38,9 @@
   (setf (elt array (+ offset 3)) (logand newval #xff))
   newval)
 
-(defmacro define-record (constructor (&key (length (gensym))) &rest fields)
+(defmacro define-record (constructor
+			 (&key (length #-clisp (gensym) #+clisp (gentemp)))
+			 &rest fields)
   `(progn
      (defconstant ,length
 	 ,(loop
@@ -180,7 +182,8 @@
   stream
   offset
   size
-  compressed-size)
+  compressed-size
+  comment)
 
 (defstruct zipwriter
   stream
@@ -196,19 +199,24 @@
 (defun read-entry-object (s external-format)
   (let* ((header (make-directory-entry s))
 	 (name (make-array (cd/name-length header)
-                           :element-type '(unsigned-byte 8))))
+                           :element-type '(unsigned-byte 8)))
+	 (comment
+	  (when (plusp (cd/comment-length header))
+	    (make-array (cd/comment-length header)
+			:element-type '(unsigned-byte 8)))))
     (assert (= (cd/signature header) #x02014b50))
     (read-sequence name s)
     (setf name (octets-to-string name external-format))
-    (prog1
-	(make-zipfile-entry :name name
-                            :stream s
-                            :offset (cd/offset header)
-                            :size (cd/size header)
-                            :compressed-size (cd/compressed-size header))
-      (file-position s (+ (file-position s)
-			  (cd/extra-length header)
-			  (cd/comment-length header))))))
+    (file-position s (+ (file-position s) (cd/extra-length header)))
+    (when comment
+      (read-sequence comment s)
+      (setf comment (octets-to-string comment external-format)))
+    (make-zipfile-entry :name name
+			:stream s
+			:offset (cd/offset header)
+			:size (cd/size header)
+			:compressed-size (cd/compressed-size header)
+			:comment comment)))
 
 (defun open-zipfile
     (pathname &key (external-format (default-external-format)))
