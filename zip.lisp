@@ -419,31 +419,48 @@
                :element-type '(unsigned-byte 8))
             (zipfile-entry-contents entry s)))))))
 
-(defun directoryp (pathname)
+(defun %directoryp (pathname)
   #+allegro (excl:file-directory-p pathname)
   #+lispworks (lispworks:file-directory-p pathname)
-  #-(or lispworks allegro)
+  #+clisp (ignore-errors
+	   (ext:probe-directory
+	    (concatenate 'string (princ-to-string pathname) "/")))
+  #-(or lispworks allegro clisp)
   (and (null (pathname-name pathname))
        (null (pathname-type pathname))))
 
+(defun %directory (d)
+  #+allegro (directory d :directories-are-files nil)
+  #+clisp (append (directory (concatenate 'string (princ-to-string d) "/*/"))
+		  (directory (concatenate 'string (princ-to-string d) "/*")))
+  #-(or allegro clisp) (directory d))
+
+(defun %file-write-date (f)
+  #+clisp (posix:file-stat-mtime (posix:file-stat f))
+  #-clisp (file-write-date f))
+
+(defun %pathname-for-directory (f)
+  #+(or allegro clisp) f
+  #-(or allegro clisp) (make-pathname :name :wild :type :wild :defaults f))
+
+(defun %directory-namestring (d)
+  #+clisp (directory-namestring
+	   (truename (concatenate 'string (princ-to-string d) "/")))
+  #-clisp (directory-namestring d))
+
 (defun zip (pathname source-directory &key (if-exists :error))
-  (let ((base (directory-namestring source-directory)))
+  (let ((base (%directory-namestring (merge-pathnames source-directory))))
     (with-output-to-zipfile (zip pathname :if-exists if-exists)
       (labels ((recurse (d)
-                 (dolist (f #+allegro (directory d :directories-are-files nil)
-                            #-allegro (directory d))
+                 (dolist (f (%directory d))
                    (cond
-                     ((directoryp f)
+                     ((%directoryp f)
                        (write-zipentry
                         zip
                         (enough-namestring (namestring f) base)
                         (make-concatenated-stream)
-                        :file-write-date (file-write-date f))
-                       (recurse #+allegro f
-                                #-allegro (make-pathname
-                                           :name :wild
-                                           :type :wild
-                                           :defaults f)))
+                        :file-write-date (%file-write-date f))
+                       (recurse (%pathname-for-directory f)))
                      ((or (pathname-name f) (pathname-type f))
                        (with-open-file (s f :element-type '(unsigned-byte 8))
                          (write-zipentry
