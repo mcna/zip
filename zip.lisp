@@ -401,8 +401,11 @@
 	      (zipfile-entries ,zipfile))))
 
 (defun unzip (pathname target-directory &key (if-exists :error) verbose)
-  (when (or (pathname-name target-directory)
-            (pathname-type target-directory))
+  ;; <Xof> "When reading[1] the value of any pathname component, conforming
+  ;;       programs should be prepared for the value to be :unspecific."
+  (when (set-difference (list (pathname-name target-directory)
+                              (pathname-type target-directory))
+                        '(nil :unspecific))
     (error "pathname not a directory, lacks trailing slash?"))
   (with-zipfile (zip pathname)
     (do-zipfile-entries (name entry zip)
