@@ -61,11 +61,11 @@
 
 (defmethod stream-read-sequence ((s truncating-stream) seq start end &key)
   (let* ((n (- end start))
-	 (max (- (size s) (pos s)))
-	 (result
-	  (read-sequence (input-handle s)
-			 seq
-			 :start start
-			 :end (+ start (min n max)))))
+        (max (- (size s) (pos s)))
+        (result
+         (read-sequence seq
+                        (input-handle s)
+                        :start start
+                        :end (+ start (min n max)))))
     (incf (pos s) (- result start))
     result))
