@@ -109,41 +109,26 @@
   (data/compressed-size :int)
   (data/size :int))
 
-(defun update-crc (crc buf &optional (end (length buf)))
-  (multiple-value-bind (high low)
-      (salza-deflate:crc32 (logxor (ldb (byte 16 16) crc) #xffff)
-			   (logxor (ldb (byte 16 00) crc) #xffff)
-			   buf
-			   end)
-    (logior (ash (logxor high #xffff) 16) (logxor low #xffff))))
-
-(defun compress (input output)
+(defun compress (input output compressor)
   (let ((nin 0)
 	(nout 0)
-	(crc 0))
-    (flet ((flush-stream (zlib-stream)
-	     (let ((start (if (zerop nout) 2 0))
-		   (end (salza:zlib-stream-position zlib-stream)))
-	       (write-sequence (salza::zlib-stream-buffer zlib-stream)
-			       output
-			       :start start
-			       :end end)
-	       (incf nout (- end start))
-	       (setf (salza:zlib-stream-position zlib-stream) 0))))
-      (let* ((input-buffer (make-array 8192 :element-type '(unsigned-byte 8)))
-	     (output-buffer (make-array 8192 :element-type '(unsigned-byte 8)))
-	     (zlib-stream (salza:make-zlib-stream output-buffer
-						  :callback #'flush-stream)))
+	(crc (make-instance 'salza2:crc32-checksum)))
+    (flet ((callback (buffer count)
+             (write-sequence buffer output :start 0 :end count)
+             (incf nout count)))
+      (setf (salza2:callback compressor) #'callback)
+      (let* ((input-buffer (make-array 8192 :element-type '(unsigned-byte 8))))
 	(loop
 	  (let ((end (read-sequence input-buffer input)))
             (cond
               ((plusp end)
-                (salza:zlib-write-sequence input-buffer zlib-stream :end end)
+                (salza2:compress-octet-vector input-buffer compressor :end end)
                 (incf nin end)
-                (setf crc (update-crc crc input-buffer end)))
+                (salza2:update crc input-buffer 0 end))
               (t
-                (salza:finish-zlib-stream zlib-stream)
-                (return (values nin nout crc))))))))))
+                (salza2:finish-compression compressor)
+                (salza2:reset compressor)
+                (return (values nin nout (salza2:result crc)))))))))))
 
 (defun store (in out)
   "Copy uncompressed bytes from IN to OUT and return values like COMPRESS."
@@ -151,15 +136,15 @@
                          :initial-element 0
                          :element-type '(unsigned-byte 8)))
         (ntotal 0)
-        (crc 0))
+        (crc (make-instance 'salza2:crc32-checksum)))
     (loop
         for n = (read-sequence buf in :end (length buf))
         until (zerop n)
         do
           (write-sequence buf out :end n)
           (incf ntotal n)
-          (setf crc (update-crc crc buf n)))
-    (values ntotal ntotal crc)))
+          (salza2:update crc buf 0 n))
+    (values ntotal ntotal (salza2:result crc))))
 
 (defun seek-to-end-header (s)
   (let* ((len (+ 65536 +end-header-length+))
@@ -187,6 +172,7 @@
 
 (defstruct zipwriter
   stream
+  compressor
   head
   tail
   external-format)
@@ -283,7 +269,7 @@
     (write-sequence utf8-name s)
     (let ((descriptor (make-data-descriptor)))
       (multiple-value-bind (nin nout crc)
-          (compress data s)
+          (compress data s (zipwriter-compressor z))
         (setf (data/crc descriptor) crc)
         (setf (data/compressed-size descriptor) nout)
         (setf (data/size descriptor) nin)
@@ -376,6 +362,7 @@
 		   :direction :output
 		   :if-exists if-exists
 		   :element-type '(unsigned-byte 8))
+     :compressor (make-instance 'salza2:deflate-compressor)
      :external-format external-format
      :head c
      :tail c)))
