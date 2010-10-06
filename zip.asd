@@ -14,7 +14,7 @@
     :depends-on (:salza2 :trivial-gray-streams :flexi-streams)
     :components ((:file "package")
 		 (:file dependent
-			:pathname #+allegro "acl.lisp" #-allegro "gray.lisp"
+			:pathname #+allegro "acl" #-allegro "gray"
 			:depends-on ("package"))
 		 (:file "ifstar" :depends-on ("package"))
 		 (:file "inflate" :depends-on ("package" "ifstar"))
