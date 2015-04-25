@@ -182,7 +182,7 @@
   position
   header)
 
-(defun read-entry-object (s external-format)
+(defun read-entry-object (s &key (external-format (default-external-format)))
   (let* ((header (make-directory-entry s))
 	 (name (make-array (cd/name-length header)
                            :element-type '(unsigned-byte 8)))
@@ -220,7 +220,7 @@
                                         :external-format external-format)))
 	    (file-position s (end/central-directory-offset end))
 	    (dotimes (x n)
-	      (let ((entry (read-entry-object s external-format)))
+	      (let ((entry (read-entry-object s :external-format external-format)))
 		(setf (gethash (zipfile-entry-name entry) entries) entry)))
 	    #+sbcl (let ((s s)) (sb-ext:finalize zipfile (lambda ()(close s))))
 	    (setf s nil)
@@ -345,7 +345,7 @@
         (8 (inflate in out)))
       outbuf)))
 
-(defmacro with-zipfile ((file pathname &key external-format) &body body)
+(defmacro with-zipfile ((file pathname &key (external-format (default-external-format))) &body body)
   `(let ((,file (open-zipfile ,pathname
                               ,@(when external-format
                                   `(:external-format ,external-format)))))
@@ -372,8 +372,8 @@
   (close (zipwriter-stream z)))
 
 (defmacro with-output-to-zipfile
-    ((var pathname &key (if-exists :error)) &body body)
-  `(let ((,var (make-zipfile-writer ,pathname :if-exists ,if-exists)))
+    ((var pathname &key (if-exists :error) (external-format (default-external-format))) &body body)
+  `(let ((,var (make-zipfile-writer ,pathname :if-exists ,if-exists :external-format ,external-format)))
      (unwind-protect
 	 (progn ,@body)
        (close-zipfile-writer ,var))))
@@ -387,14 +387,14 @@
 		,@body)
 	      (zipfile-entries ,zipfile))))
 
-(defun unzip (pathname target-directory &key (if-exists :error) verbose)
+(defun unzip (pathname target-directory &key (if-exists :error) verbose (external-format (default-external-format)))
   ;; <Xof> "When reading[1] the value of any pathname component, conforming
   ;;       programs should be prepared for the value to be :unspecific."
   (when (set-difference (list (pathname-name target-directory)
                               (pathname-type target-directory))
                         '(nil :unspecific))
     (error "pathname not a directory, lacks trailing slash?"))
-  (with-zipfile (zip pathname)
+  (with-zipfile (zip pathname :external-format external-format)
     (do-zipfile-entries (name entry zip)
       (let ((filename (merge-pathnames name target-directory)))
         (ensure-directories-exist filename)
@@ -438,9 +438,11 @@
 	   (truename (concatenate 'string (princ-to-string d) "/")))
   #-clisp (directory-namestring d))
 
-(defun zip (pathname source-directory &key (if-exists :error))
+(defun zip (pathname source-directory &key (if-exists :error) 
+                                           (external-format (default-external-format)))
   (let ((base (%directory-namestring (merge-pathnames source-directory))))
-    (with-output-to-zipfile (zip pathname :if-exists if-exists)
+    (with-output-to-zipfile (zip pathname :if-exists if-exists 
+                                          :external-format external-format)
       (labels ((recurse (d)
                  (dolist (f (%directory d))
                    (cond
